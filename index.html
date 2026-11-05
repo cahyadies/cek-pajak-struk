@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAF7F2" />
+  <title>SidakStruk — Scan Dokumen Struk & Cek Pajak</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div>
+        <span class="eyebrow">PEMINDAI DOKUMEN FISKAL</span>
+        <h1 class="brand-title">SidakStruk</h1>
+      </div>
+      <button id="installBtn" class="btn-outline btn-sm hidden" type="button">Install App</button>
+    </header>
+
+    <!-- VIEW 1: SCAN DOKUMEN STRUK & HASIL OLAHAN -->
+    <main id="view-scan" class="view active">
+      <section class="scanner-box">
+        <div class="scanner-Controls">
+          <label class="btn-primary" for="fileInput">
+            <span>📷 Foto / Scan Struk</span>
+            <input id="fileInput" type="file" accept="image/*" capture="environment" hidden />
+          </label>
+          <button id="openCamBtn" class="btn-outline" type="button">Kamera Auto-Scan</button>
+        </div>
+
+        <!-- Live Camera Stream dengan Bingkai Auto-Detect Kertas -->
+        <div id="cameraWrap" class="camera-wrap hidden">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+          <div class="doc-reticle">
+            <span class="corner tl"></span><span class="corner tr"></span>
+            <span class="corner bl"></span><span class="corner br"></span>
+            <div class="reticle-label">Deteksi Otomatis Kertas Struk</div>
+          </div>
+          <div class="camera-actions">
+            <button id="captureBtn" class="btn-primary" type="button">Pindai Dokumen Struk</button>
+            <button id="closeCamBtn" class="btn-outline" type="button">Tutup</button>
+          </div>
+        </div>
+
+        <!-- Coba Sampel Foto Struk Utuh -->
+        <div class="sample-bar">
+          <span class="sample-label">Atau uji deteksi otomatis dengan foto struk utuh:</span>
+          <div class="sample-chips">
+            <button class="chip active" data-sample="minimarket" type="button">Minimarket (PPN)</button>
+            <button class="chip" data-sample="resto" type="button">Resto (PB1 + Service)</button>
+            <button class="chip chip-warn" data-sample="anomali" type="button">Pajak Ganda ⚠️</button>
+          </div>
+        </div>
+
+        <div id="ocrStatus" class="ocr-status hidden">Mendeteksi kertas struk & mengekstrak informasi pajak...</div>
+      </section>
+
+      <!-- HASIL IMAGE-TO-DOCUMENT (KERTAS STRUK UTUH) -->
+      <section class="loupe-section">
+        <div class="section-head">
+          <h2>📄 Dokumen Struk Terdeteksi</h2>
+          <button id="toggleRawPhotoBtn" class="link-btn" type="button">Lihat Titik Potong Kertas</button>
+        </div>
+        <p class="helper-text">Seluruh kertas struk otomatis dipotong menjadi dokumen bersih dan baris pajaknya ditandai:</p>
+
+        <div id="docStage" class="doc-stage">
+          <div class="scan-laser" id="scanLaser"></div>
+          <span class="stamp-badge" id="modeBadge">PPN INKLUSIF</span>
+          <canvas id="docCanvas"></canvas>
+          <canvas id="rawCanvas" class="hidden"></canvas>
+        </div>
+      </section>
+
+      <!-- HASIL OLAHAN INFORMASI PAJAK -->
+      <section id="resultSection" class="result-card">
+        <div class="result-header">
+          <div>
+            <span class="eyebrow" id="resMerchant">INDOMART PRIMA JAYA</span>
+            <h2 class="big-pct"><span id="resTaxPct">5,68</span>% <small>dari total bayar adalah pajak</small></h2>
+          </div>
+          <button id="editNumbersBtn" class="btn-outline btn-sm" type="button">Ubah Angka</button>
+        </div>
+
+        <!-- Bar Proporsi Uang -->
+        <div class="split-bar" aria-label="Proporsi Pembayaran">
+          <div id="barGoods" class="bar-seg seg-goods" style="width: 90%"></div>
+          <div id="barService" class="bar-seg seg-service" style="width: 0%"></div>
+          <div id="barTax" class="bar-seg seg-tax" style="width: 10%"></div>
+        </div>
+        <div class="split-legend">
+          <span><i class="dot dot-goods"></i>Harga Murni (<b id="legGoodsPct">94,3%</b>)</span>
+          <span id="legServiceWrap"><i class="dot dot-service"></i>Service (<b id="legServicePct">0%</b>)</span>
+          <span><i class="dot dot-tax"></i>Pajak (<b id="legTaxPct">5,7%</b>)</span>
+        </div>
+
+        <!-- Tabel Rincian Tabular -->
+        <div class="ledger">
+          <div class="ledger-row">
+            <span>Total yang Kamu Bayarkan</span>
+            <strong class="mono" id="resTotal">Rp 174.400</strong>
+          </div>
+          <div class="ledger-row">
+            <span>Dasar Pengenaan Pajak (DPP / Subtotal)</span>
+            <span class="mono" id="resBase">Rp 90.000</span>
+          </div>
+          <div class="ledger-row" id="rowBtkp">
+            <span>Barang Bebas Pajak (BTKP / Sembako)</span>
+            <span class="mono" id="resBtkp">Rp 74.500</span>
+          </div>
+          <div class="ledger-row" id="rowService">
+            <span>Service Charge (Biaya Layanan)</span>
+            <span class="mono" id="resService">Rp 0</span>
+          </div>
+          <div class="ledger-row highlight-row">
+            <span>Total Pajak Dikenakan (<span id="resRateOnBase">11%</span> dari DPP)</span>
+            <strong class="mono tax-amount" id="resTaxNominal">Rp 9.900</strong>
+          </div>
+        </div>
+
+        <div id="warningBox" class="warning-box hidden"></div>
+
+        <div class="result-actions">
+          <button id="saveHistoryBtn" class="btn-primary btn-full" type="button">+ Simpan ke Catatan Pajakku</button>
+        </div>
+      </section>
+
+      <!-- EDUKASI SINGKAT SESUAI PAJAK DI STRUK -->
+      <section class="edu-section">
+        <div class="section-head">
+          <h2>📖 Arti Pajak di Struk Ini</h2>
+        </div>
+        <div id="contextualEduList" class="edu-list"></div>
+      </section>
+    </main>
+
+    <!-- VIEW 2: KALKULATOR & SIMULASI PAJAK -->
+    <main id="view-calc" class="view">
+      <section class="card">
+        <h2>🧮 Kalkulator Bedah Pajak</h2>
+        <p class="helper-text">Hitung cepat berapa rupiah dan berapa persen pajak dari nominal belanja atau makanmu.</p>
+
+        <div class="form-group">
+          <label for="calcAmount">Nominal di Struk / Harga Menu (Rp)</label>
+          <input id="calcAmount" class="input-mono" type="number" value="150000" min="0" step="1000" />
+        </div>
+
+        <div class="form-group">
+          <label for="calcScheme">Skema Pajak pada Struk</label>
+          <select id="calcScheme" class="input-select">
+            <option value="ppn_inc">Minimarket — Harga Sudah Termasuk PPN 11%</option>
+            <option value="ppn_exc">Ritel / Faktur — Harga Belum Termasuk PPN 11%</option>
+            <option value="resto_pb1">Resto / Kafe — PB1 10% + Service Charge 7%</option>
+            <option value="fastfood_pb1">Fast Food — PB1 / PBJT 10% Tanpa Service</option>
+          </select>
+        </div>
+
+        <div id="calcOutput" class="ledger calc-ledger"></div>
+      </section>
+    </main>
+
+    <!-- VIEW 3: KAMUS EDUKASI PAJAK STRUK -->
+    <main id="view-edu" class="view">
+      <section class="card">
+        <h2>🎓 Panduan Membaca Pajak Struk</h2>
+        <p class="helper-text">Kenali istilah yang sering dicetak kecil di bagian bawah struk agar tidak salah paham.</p>
+        <div id="fullEduContainer" class="edu-list"></div>
+      </section>
+    </main>
+
+    <!-- VIEW 4: RIWAYAT PAJAKKU -->
+    <main id="view-history" class="view">
+      <section class="card">
+        <div class="section-head">
+          <h2>🗂️ Jejak Pajak yang Kamu Bayar</h2>
+          <button id="clearHistoryBtn" class="link-btn" type="button">Reset</button>
+        </div>
+        <div class="history-summary">
+          <div>
+            <span class="eyebrow">TOTAL PAJAK TERKUMPUL</span>
+            <strong class="mono big-num" id="histTotalTax">Rp 0</strong>
+          </div>
+          <div>
+            <span class="eyebrow">DARI TOTAL BELANJA</span>
+            <span class="mono" id="histTotalSpend">Rp 0</span>
+          </div>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+    </main>
+
+    <!-- Modal Koreksi Cepat -->
+    <div id="editModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-sheet">
+        <h3>Koreksi Angka Struk</h3>
+        <div class="form-grid">
+          <label>Nama Toko / Resto <input id="edMerchant" type="text" /></label>
+          <label>Total Bayar (Rp) <input id="edTotal" class="input-mono" type="number" /></label>
+          <label>DPP / Subtotal (Rp) <input id="edBase" class="input-mono" type="number" /></label>
+          <label>PPN (Rp) <input id="edPpn" class="input-mono" type="number" /></label>
+          <label>PB1 / Pajak Resto (Rp) <input id="edPb1" class="input-mono" type="number" /></label>
+          <label>Service Charge (Rp) <input id="edService" class="input-mono" type="number" /></label>
+        </div>
+        <div class="modal-actions">
+          <button id="saveEditBtn" class="btn-primary" type="button">Terapkan</button>
+          <button id="cancelEditBtn" class="btn-outline" type="button">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav" aria-label="Menu Utama">
+      <button class="nav-item active" data-target="view-scan" type="button">
+        <span class="nav-icon">📄</span><span>Scan Struk</span>
+      </button>
+      <button class="nav-item" data-target="view-calc" type="button">
+        <span class="nav-icon">🧮</span><span>Kalkulator</span>
+      </button>
+      <button class="nav-item" data-target="view-edu" type="button">
+        <span class="nav-icon">📖</span><span>Edukasi</span>
+      </button>
+      <button class="nav-item" data-target="view-history" type="button">
+        <span class="nav-icon">🗂️</span><span>Riwayat</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+  <script src="./receipt-samples.js"></script>
+  <script src="./ocr-parser.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

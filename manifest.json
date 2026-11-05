@@ -1,0 +1,18 @@
+{
+  "name": "SidakStruk — Cek & Scan Pajak Struk Belanja",
+  "short_name": "SidakStruk",
+  "description": "Aplikasi scanner struk belanja untuk mendeteksi pajak tersembunyi (PPN, PB1/PBJT, Service Charge), persentase dari total bayar, dan edukasi pajak.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1120",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

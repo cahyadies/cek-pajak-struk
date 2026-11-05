@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e" />
+      <stop offset="100%" stop-color="#042f2e" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <!-- Receipt Paper -->
+  <path d="M136 88 L344 88 C355 88 364 97 364 108 L364 412 L338 392 L312 412 L286 392 L260 412 L234 392 L208 412 L182 392 L156 412 L130 392 L116 404 L116 108 C116 97 125 88 136 88 Z" fill="#f8fafc" />
+  <!-- Receipt Lines -->
+  <rect x="148" y="128" width="120" height="16" rx="8" fill="#94a3b8" />
+  <rect x="148" y="164" width="180" height="12" rx="6" fill="#cbd5e1" />
+  <rect x="148" y="190" width="160" height="12" rx="6" fill="#cbd5e1" />
+  <line x1="144" y1="226" x2="336" y2="226" stroke="#cbd5e1" stroke-width="4" stroke-dasharray="8 8" />
+  <!-- Highlighted Tax Area -->
+  <rect x="140" y="246" width="196" height="68" rx="12" fill="#fef3c7" stroke="#f59e0b" stroke-width="4" />
+  <text x="156" y="292" font-family="system-ui, sans-serif" font-weight="800" font-size="34" fill="#b45309">PPN %</text>
+  <!-- Magnifying Glass -->
+  <circle cx="348" cy="336" r="76" fill="#0f172a" fill-opacity="0.88" stroke="url(#accentGrad)" stroke-width="18" />
+  <text x="348" y="352" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="48" fill="#fbbf24">11%</text>
+  <line x1="404" y1="392" x2="454" y2="442" stroke="url(#accentGrad)" stroke-width="24" stroke-linecap="round" />
+</svg>
